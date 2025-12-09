@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>IE 3038 P.C.Guzmán - Chatbot</title>
+    <style>
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f4f4f9;
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+        }
+        #chat-container {
+            width: 100%;
+            max-width: 600px;
+            height: 100%;
+            background-color: #ffffff;
+            display: flex;
+            flex-direction: column;
+            box-shadow: 0 0 20px rgba(0,0,0,0.1);
+        }
+        header {
+            background-color: #0056b3; /* Azul Institucional */
+            color: white;
+            padding: 15px;
+            text-align: center;
+            font-size: 1.1rem;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+        #chat-box {
+            flex: 1;
+            padding: 20px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+        .message {
+            padding: 12px 16px;
+            border-radius: 12px;
+            max-width: 85%;
+            line-height: 1.5;
+            font-size: 0.95rem;
+            animation: fadeIn 0.3s ease;
+            word-wrap: break-word;
+        }
+        .bot-msg {
+            background-color: #e9ecef;
+            color: #333;
+            align-self: flex-start;
+            border-bottom-left-radius: 2px;
+        }
+        .user-msg {
+            background-color: #0056b3;
+            color: white;
+            align-self: flex-end;
+            border-bottom-right-radius: 2px;
+        }
+   
+        .bot-msg a { color: #0056b3; font-weight: bold; }
+        .user-msg a { color: #fff; text-decoration: underline; }
+
+        footer {
+            padding: 15px;
+            background-color: #f8f9fa;
+            display: flex;
+            gap: 10px;
+            border-top: 1px solid #ddd;
+        }
+        input {
+            flex: 1;
+            padding: 12px;
+            border-radius: 25px;
+            border: 1px solid #ccc;
+            outline: none;
+        }
+        button {
+            padding: 10px 20px;
+            background-color: #0056b3;
+            color: white;
+            border: none;
+            border-radius: 25px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+        button:hover { background-color: #004494; }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+    </style>
+</head>
+<body>
+
+    <div id="chat-container">
+        <header>
+            🏫 IE 3038 P.C.Guzmán
+        </header>
+
+        <div id="chat-box">
+            </div>
+
+        <footer>
+            <input type="number" id="user-input" placeholder="Escribe el número de opción..." autofocus>
+            <button onclick="handleInput()">Enviar</button>
+        </footer>
+    </div>
+
+    <script>
+       
+        let currentState = 'main'; 
+        let currentMenuSelection = null; 
+
+        const mainMenuText = `
+👋 ¡Hola! ¡Bienvenido a la IE 3038 P.C.Guzmán! Soy ClassMind.
+<br><br>
+Por favor elige una opción:<br>
+<b>1️⃣</b> Matrículas y Admisiones<br>
+<b>2️⃣</b> Horarios y Calendario Académico<br>
+<b>3️⃣</b> Pago y Gestión Administrativa<br>
+<b>4️⃣</b> Eventos y Comunicados<br>
+<br>
+Escribe el número de la opción que deseas.`;
+
+        const menus = {
+          1: {
+            title: "📘 <b>Matrículas y Admisiones</b>",
+            options: {
+              1: "¿Cuándo inicia las inscripciones/matrículas?",
+              2: "¿Qué documentos necesito para solicitar una vacante?",
+              3: "¿Cuánto es el costo de la matrícula?",
+              4: "¿Cuándo inicia y termina el proceso de matrícula 2026?",
+              5: "¿Qué se debe hacer si se tiene un niño/a con necesidades especiales?",
+              6: "¿Cuál es la edad normativa para determinar el grado?",
+              7: "¿Qué criterios se toman si hay más postulantes que vacantes?",
+              8: "¿Qué documentos entregar para matrícula 2026?",
+              9: "Preguntas Frecuentes, Recuperación y Traslado"
+            },
+            responses: {
+              1: "Inicia desde diciembre hasta febrero. FUT oficial: https://drive.google.com/file/d/1LLvUslWn6w5tqhW5zkdxIPwKyUqNCnmQ/view?usp=sharing",
+              2: "Necesita: Informe de progresos, Copias de DNI (Estudiante, padres), Partida de nacimiento. ¡Todo en mica gruesa oficio!",
+              3: "La matrícula es <b>TOTALMENTE GRATUITA</b>.",
+              4: "Ver cuadro de fechas: https://drive.google.com/file/d/1BOanBW4NDNbzps_Y50A3c2HJ0G390nft/view?usp=sharing",
+              5: "Presentar informe neuropsicológico y documentos del numeral 4.",
+              6: "Ver detalles de edad normativa: https://drive.google.com/file/d/1fhJ-EjRVAyZ9BXE5hUlZw2ajJmLnYSNM/view?usp=sharing",
+              7: "Criterios de vulnerabilidad: https://drive.google.com/file/d/158bMR1WOAzmiGHDhcwaIaVLJp-eTuHVX/view?usp=sharing",
+              8: "Ficha Única (FUM), Certificado de estudios, Informe 2025, DNI.",
+              9: "Preguntas frecuentes PDF: https://drive.google.com/file/d/1mc0XxkdV1h3eowNyzh7KGPj3kFzND6XQ/view?usp=sharing"
+            }
+          },
+          2: {
+            title: "📅 <b>Horarios y Calendario Escolar</b>",
+            options: {
+              1: "Horario de atención al público",
+              2: "Vacaciones y feriados"
+            },
+            responses: {
+              1: "El horario de atención es de Lunes a Viernes, de 8:30 a.m. a 1:30 p.m.",
+              2: "Vacaciones del 21 Jul al 3 Ago. Feriados: https://www.gob.pe/feriados"
+            }
+          },
+          3: {
+            title: "💼 <b>Pago y Gestión Administrativa</b>",
+            options: {
+              1: "¿Cómo solicito el Certificado de Estudios?",
+              2: "¿La matrícula será presencial, virtual o mixta?"
+            },
+            responses: {
+              1: "Solicítelo aquí: https://certificado.minedu.gob.pe/ (opción 1).",
+              2: "Es 100% presencial."
+            }
+          },
+          4: {
+            title: "🎉 <b>Eventos y Comunicados</b>",
+            options: {
+              1: "¿Cuándo será la próxima reunión de Padres?",
+              2: "Contacto con la institución"
+            },
+            responses: {
+              1: "Revise nuestro Facebook: https://web.facebook.com/institucioneducativa3038",
+              2: "Teléfono: 01 777-7777 | Correo: institucioneducativa3038@gmail.com"
+            }
+          }
+        };
+
+        const chatBox = document.getElementById('chat-box');
+        const userInput = document.getElementById('user-input');
+
+        window.onload = () => {
+            addMessage(mainMenuText, 'bot-msg');
+        };
+
+        function handleInput() {
+            const text = userInput.value.trim();
+            if (text === "") return;
+
+            addMessage(text, 'user-msg');
+            userInput.value = "";
+
+            setTimeout(() => {
+                processBotLogic(text);
+            }, 500);
+        }
+
+        function processBotLogic(input) {
+            
+            if (input === "0") {
+                currentState = 'main';
+                currentMenuSelection = null;
+                addMessage("🔙 Volviendo al menú principal...", 'bot-msg');
+                setTimeout(() => addMessage(mainMenuText, 'bot-msg'), 500);
+                return;
+            }
+
+            if (currentState === 'main') {
+                if (menus[input]) {
+    
+                    currentState = 'submenu';
+                    currentMenuSelection = input;
+                    
+                    const selectedMenu = menus[input];
+                    let msg = `${selectedMenu.title}<br>Elige una pregunta:<br><br>`;
+    
+                    for (const [key, opt] of Object.entries(selectedMenu.options)) {
+                        msg += `<b>${key}.</b> ${opt}<br>`;
+                    }
+                    msg += `<br>🔙 Escribe <b>0</b> para volver al inicio.`;
+                    
+                    addMessage(msg, 'bot-msg');
+                } else {
+                    addMessage("⚠️ Por favor elige una opción válida (1-4).", 'bot-msg');
+                }
+            } 
+
+            else if (currentState === 'submenu') {
+                const menuData = menus[currentMenuSelection];
+                
+                if (menuData.responses[input]) {
+                    const respuesta = menuData.responses[input];
+                    addMessage(respuesta + "<br><br>🔙 Para regresar al menú principal escribe <b>0</b>.", 'bot-msg');
+                } else {
+                    addMessage("⚠️ Opción no válida. Escribe el número de la pregunta o <b>0</b> para volver.", 'bot-msg');
+                }
+            }
+        }
+
+        function addMessage(text, className) {
+            const div = document.createElement('div');
+            div.className = `message ${className}`;
+            
+            const urlRegex = /(https?:\/\/[^\s]+)/g;
+            const textWithLinks = text.replace(urlRegex, function(url) {
+                return `<a href="${url}" target="_blank">${url}</a>`;
+            });
+
+            div.innerHTML = textWithLinks;
+            
+            chatBox.appendChild(div);
+            chatBox.scrollTop = chatBox.scrollHeight;
+        }
+        
+        userInput.addEventListener("keypress", function(e) {
+            if (e.key === "Enter") handleInput();
+        });
+
+    </script>
+</body>
+</html>
